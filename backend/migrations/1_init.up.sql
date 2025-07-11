@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    toilets_found INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS toilets (
+    id SERIAL PRIMARY KEY,
+    founder_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    point TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS reviews (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    toilet_id INTEGER NOT NULL REFERENCES toilets(id) ON DELETE CASCADE,
+    title TEXT,
+    review_text TEXT,
+    score INTEGER CHECK (score BETWEEN 1 AND 5)
+);
