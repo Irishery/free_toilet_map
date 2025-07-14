@@ -1,0 +1,7 @@
+/* В index.css или глобальном файле */
+.mantine-Modal-root {
+  z-index: 9999 !important;
+}
+.mantine-Modal-inner {
+  z-index: 9999 !important;
+}

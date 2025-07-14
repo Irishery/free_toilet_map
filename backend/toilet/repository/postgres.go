@@ -2,73 +2,71 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
+	"errors"
 	models "free_toilet_map/toilet/model"
-	"os"
-
-	_ "github.com/lib/pq"
 )
 
-type PostgresRepo struct {
+type PostgresRepository struct {
     db *sql.DB
 }
 
-func NewPostgresRepoWithDB(db *sql.DB) *PostgresRepo {
-    return &PostgresRepo{db: db}
+func NewPostgresRepoWithDB(db *sql.DB) *PostgresRepository {
+    return &PostgresRepository{db: db}
 }
 
-
-func NewPostgresRepo() (*PostgresRepo, error) {
-    connStr := fmt.Sprintf(
-        "host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-        os.Getenv("DB_HOST"),
-        os.Getenv("DB_PORT"),
-        os.Getenv("DB_USER"),
-        os.Getenv("DB_PASSWORD"),
-        os.Getenv("DB_NAME"),
-    )
-
-    db, err := sql.Open("postgres", connStr)
+func (r *PostgresRepository) CreateUser(user models.User) (models.User, error) {
+    query := `INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id`
+    err := r.db.QueryRow(query, user.Username, user.Password).Scan(&user.ID)
     if err != nil {
-        return nil, err
+        if err.Error() == `pq: duplicate key value violates unique constraint "users_username_key"` {
+            return models.User{}, errors.New("username already exists")
+        }
+        return models.User{}, err
     }
-
-    return &PostgresRepo{db: db}, nil
+    return user, nil
 }
 
-func (r *PostgresRepo) CreateUser(user models.User) (models.User, error) {
-    row := r.db.QueryRow(`
-        INSERT INTO users (username, password, toilets_found)
-        VALUES ($1, $2, $3)
-        RETURNING id
-    `, user.Username, user.Password, user.ToiletsFound)
-
-    err := row.Scan(&user.ID)
+func (r *PostgresRepository) GetUserByUsername(username string) (models.User, error) {
+    var user models.User
+    query := `SELECT id, username, password, toilets_found FROM users WHERE username = $1`
+    err := r.db.QueryRow(query, username).Scan(&user.ID, &user.Username, &user.Password, &user.ToiletsFound)
+    if err == sql.ErrNoRows {
+        return user, errors.New("user not found")
+    }
     return user, err
 }
 
-func (r *PostgresRepo) GetAllToilets() ([]models.Toilet, error) {
-    rows, err := r.db.Query(`SELECT id, founder_id, name, point FROM toilets`)
+func (r *PostgresRepository) GetAllToilets() ([]models.Toilet, error) {
+    query := `SELECT id, founder_id, name, point FROM toilets`
+    rows, err := r.db.Query(query)
     if err != nil {
         return nil, err
     }
     defer rows.Close()
 
-    var result []models.Toilet
+    var toilets []models.Toilet
     for rows.Next() {
         var t models.Toilet
         if err := rows.Scan(&t.ID, &t.FounderID, &t.Name, &t.Point); err != nil {
             return nil, err
         }
-        result = append(result, t)
+        toilets = append(toilets, t)
     }
-    return result, nil
+    return toilets, nil
 }
 
-func (r *PostgresRepo) AddReview(rw models.Review) error {
+func (r *PostgresRepository) AddToilet(toilet models.Toilet) error {
     _, err := r.db.Exec(`
-        INSERT INTO reviews (user_id, toilet_id, title, review_text, score)
-        VALUES ($1, $2, $3, $4, $5)
-    `, rw.UserID, rw.ToiletID, rw.Title, rw.ReviewText, rw.Score)
+        INSERT INTO toilets (founder_id, name, point)
+        VALUES ($1, $2, $3)
+    `, toilet.FounderID, toilet.Name, toilet.Point)
+
+    return err
+}
+
+
+func (r *PostgresRepository) AddReview(review models.Review) error {
+    query := `INSERT INTO reviews (user_id, toilet_id, title, review_text, score) VALUES ($1, $2, $3, $4, $5)`
+    _, err := r.db.Exec(query, review.UserID, review.ToiletID, review.Title, review.ReviewText, review.Score)
     return err
 }

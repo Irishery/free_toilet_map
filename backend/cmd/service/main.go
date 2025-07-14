@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"free_toilet_map/toilet/endpoint"
 	"free_toilet_map/toilet/repository"
@@ -17,6 +18,18 @@ import (
 
 	_ "github.com/lib/pq"
 )
+
+func waitForDB(db *sql.DB) {
+    for i := 0; i < 10; i++ {
+        if err := db.Ping(); err == nil {
+            return
+        }
+        log.Println("Waiting for database to be ready...")
+        time.Sleep(2 * time.Second)
+    }
+    log.Fatal("Database not ready after 20s")
+}
+
 
 func runMigrations(db *sql.DB) {
     driver, err := postgres.WithInstance(db, &postgres.Config{})
@@ -46,10 +59,11 @@ func main() {
         log.Fatalf("Cannot connect to DB: %v", err)
     }
 
+    waitForDB(db)
     runMigrations(db)
 
     repo := repository.NewPostgresRepoWithDB(db)
-    svc := service.NewService(repo)
+    svc := service.NewService(*repo)
     eps := endpoint.MakeEndpoints(svc)
     handler := transport.NewHTTPHandler(eps)
 

@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+// src/pages/Login.jsx
+import { useState } from "react";
 import {
   Container,
   Title,
   TextInput,
   PasswordInput,
   Button,
+  Paper,
   Group,
   Text,
   Anchor,
-  Paper,
 } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { showNotification } from "@mantine/notifications";
@@ -23,30 +24,32 @@ export default function Login() {
       showNotification({ color: "red", message: "Введите имя и пароль" });
       return;
     }
+
     try {
-      const res = await fetch("/user/login", {
+      const res = await fetch("http://localhost:8080/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-      if (!res.ok) throw new Error("Ошибка авторизации");
+
+      if (!res.ok) throw new Error("Ошибка входа");
+
+      const data = await res.json();
+      localStorage.setItem("token", data.token);
       showNotification({ color: "green", message: "Успешный вход" });
-      navigate("/");
-    } catch {
+      navigate("/dashboard");
+    } catch (err) {
       showNotification({ color: "red", message: "Неверные данные" });
     }
   };
 
   return (
     <Container size={420} my={40}>
-      <Paper padding="xl" shadow="md" radius="md">
-        <Title align="center" mb="md">
-          Вход
-        </Title>
+      <Paper p="xl" shadow="md" radius="md">
+        <Title align="center" mb="md">Вход</Title>
 
         <TextInput
           label="Имя пользователя"
-          placeholder="Введите имя пользователя"
           value={username}
           onChange={(e) => setUsername(e.currentTarget.value)}
           required
@@ -54,20 +57,19 @@ export default function Login() {
         />
         <PasswordInput
           label="Пароль"
-          placeholder="Введите пароль"
           value={password}
           onChange={(e) => setPassword(e.currentTarget.value)}
           required
           mb="md"
         />
+
         <Group position="apart" mb="md">
           <Text size="sm">
             Нет аккаунта?{" "}
-            <Anchor href="/register" size="sm">
-              Зарегистрироваться
-            </Anchor>
+            <Anchor href="/register" size="sm">Зарегистрироваться</Anchor>
           </Text>
         </Group>
+
         <Button fullWidth onClick={handleLogin}>
           Войти
         </Button>

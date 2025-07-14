@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+// src/pages/Register.jsx
+import { useState } from "react";
 import {
   Container,
   Title,
   TextInput,
   PasswordInput,
   Button,
+  Paper,
   Group,
   Text,
   Anchor,
-  Paper,
 } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { showNotification } from "@mantine/notifications";
@@ -23,13 +24,16 @@ export default function Register() {
       showNotification({ color: "red", message: "Введите имя и пароль" });
       return;
     }
+
     try {
-      const res = await fetch("/user/create", {
+      const res = await fetch("http://localhost:8080/user/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
+
       if (!res.ok) throw new Error("Ошибка регистрации");
+
       showNotification({ color: "green", message: "Пользователь создан" });
       navigate("/login");
     } catch {
@@ -39,14 +43,11 @@ export default function Register() {
 
   return (
     <Container size={420} my={40}>
-      <Paper padding="xl" shadow="md" radius="md">
-        <Title align="center" mb="md">
-          Регистрация
-        </Title>
+      <Paper p="xl" shadow="md" radius="md">
+        <Title align="center" mb="md">Регистрация</Title>
 
         <TextInput
           label="Имя пользователя"
-          placeholder="Введите имя пользователя"
           value={username}
           onChange={(e) => setUsername(e.currentTarget.value)}
           required
@@ -54,20 +55,19 @@ export default function Register() {
         />
         <PasswordInput
           label="Пароль"
-          placeholder="Введите пароль"
           value={password}
           onChange={(e) => setPassword(e.currentTarget.value)}
           required
           mb="md"
         />
+
         <Group position="apart" mb="md">
           <Text size="sm">
             Уже есть аккаунт?{" "}
-            <Anchor href="/login" size="sm">
-              Войти
-            </Anchor>
+            <Anchor href="/login" size="sm">Войти</Anchor>
           </Text>
         </Group>
+
         <Button fullWidth onClick={handleRegister}>
           Создать аккаунт
         </Button>
