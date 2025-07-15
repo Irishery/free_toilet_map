@@ -6,6 +6,7 @@ import (
 	"free_toilet_map/toilet/auth"
 	models "free_toilet_map/toilet/model"
 	"free_toilet_map/toilet/service"
+	"strconv"
 	"time"
 
 	"github.com/go-kit/kit/endpoint"
@@ -19,6 +20,7 @@ type Endpoints struct {
 	AddReview   endpoint.Endpoint
     AddToilet endpoint.Endpoint
 	Login       endpoint.Endpoint
+	GetReviewsByToilet  endpoint.Endpoint
 }
 
 func MakeEndpoints(svc service.Service) Endpoints {
@@ -28,6 +30,7 @@ func MakeEndpoints(svc service.Service) Endpoints {
 		AddReview:   makeAddReviewEndpoint(svc),
         AddToilet: makeAddToiletEndpoint(svc),
 		Login:       makeLoginEndpoint(svc),
+		GetReviewsByToilet:   makeGetReviewsByToiletEndpoint(svc),
 	}
 }
 
@@ -87,8 +90,6 @@ func makeAddToiletEndpoint(s service.Service) endpoint.Endpoint {
     }
 }
 
-
-
 func makeCreateUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(*map[string]string)
@@ -133,5 +134,30 @@ func makeAddReviewEndpoint(s service.Service) endpoint.Endpoint {
 
         return map[string]string{"status": "ok"}, nil
 
+    }
+}
+
+// В файле 'endpoint/endpoints.go'
+
+func makeGetReviewsByToiletEndpoint(s service.Service) endpoint.Endpoint {
+    return func(ctx context.Context, request interface{}) (interface{}, error) {
+        toiletID, ok := request.(string)  // Получаем ID туалета как строку
+        if !ok {
+            return nil, errors.New("invalid request format")
+        }
+
+        // Преобразуем строку в int
+        toiletIDInt, err := strconv.Atoi(toiletID)
+		println(toiletID)
+        if err != nil {
+            return nil, errors.New("invalid toilet ID")
+        }
+
+        reviews, err := s.GetReviewsByToilet(toiletIDInt)
+        if err != nil {
+            return nil, err
+        }
+
+        return reviews, nil
     }
 }

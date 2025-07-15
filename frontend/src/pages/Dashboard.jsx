@@ -1,21 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-} from "react-leaflet";
-import {
-  Container,
-  Title,
-  Loader,
-  Alert,
-  Text,
-  TextInput,
-  Textarea,
-  Button,
-  Stack,
-} from "@mantine/core";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { Container, Title, Loader, Alert, Button, Stack, TextInput, Textarea, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -30,12 +15,38 @@ L.Icon.Default.mergeOptions({
   shadowUrl: new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).href,
 });
 
+// Компонент для отображения рейтинга и отзывов
+// Компонент для отображения рейтинга и отзывов
+function RatingAndReviews({ reviews }) {
+  const reviewList = Array.isArray(reviews) ? reviews : [];
+
+  return (
+    <div>
+      <strong>Отзывы:</strong>
+      <ul>
+        {reviewList.length > 0 ? (
+          reviewList.map((review, index) => (
+            <li key={index}>
+              <strong>{review.title}</strong>
+              <p>{review.review_text}</p>
+              <div>Оценка: {review.score}</div>
+            </li>
+          ))
+        ) : (
+          <li>Нет отзывов</li>
+        )}
+      </ul>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { token } = useAuth();
   const [toilets, setToilets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const [activeToilet, setActiveToilet] = useState(null); // Состояние активного туалета
+  
   useEffect(() => {
     api
       .get("/toilets")
@@ -45,22 +56,27 @@ export default function Dashboard() {
   }, []);
 
   const openToiletModal = (toilet) => {
+    setActiveToilet(toilet); // Устанавливаем активный туалет
+
     modals.open({
       title: `Туалет: ${toilet.name}`,
       size: "lg",
       centered: true,
+      key: toilet.id, // Добавление уникального ключа для каждой модалки
       children: (
         <ModalContent
           toilet={toilet}
-          onSubmit={(title, text) =>
-            submitReview(toilet.id, title, text, modals.closeAll)
-          }
+          onSubmit={(title, text) => submitReview(toilet.id, title, text)}
+          onClose={() => {
+            setActiveToilet(null); // Сброс активного туалета при закрытии модалки
+            modals.closeAll(); // Закрыть все модалки
+          }}
         />
       ),
     });
   };
 
-  const submitReview = async (toiletId, title, text, onSuccess) => {
+  const submitReview = async (toiletId, title, text) => {
     if (!title || !text) return;
 
     try {
@@ -78,7 +94,8 @@ export default function Dashboard() {
           },
         }
       );
-      onSuccess?.();
+      modals.closeAll(); // Закрываем все модалки после успешной отправки
+      setActiveToilet(null); // Сброс активного туалета
     } catch {
       alert("Ошибка при отправке отзыва");
     }
@@ -104,11 +121,9 @@ export default function Dashboard() {
                 key={toilet.id}
                 position={[lat, lng]}
                 eventHandlers={{
-                  click: () => openToiletModal(toilet),
+                  click: () => openToiletModal(toilet), // Открываем модалку при клике
                 }}
-              >
-                <Popup>{toilet.name}</Popup>
-              </Marker>
+              />
             );
           })}
         </MapContainer>
@@ -117,16 +132,42 @@ export default function Dashboard() {
   );
 }
 
-// Компонент формы модалки
-function ModalContent({ toilet, onSubmit }) {
+function ModalContent({ toilet, onSubmit, onClose }) {
   const [reviewTitle, setReviewTitle] = useState("");
   const [reviewText, setReviewText] = useState("");
+  const [reviews, setReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch reviews asynchronously using useEffect
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const response = await api.get(`/toilet/${toilet.id}/reviews`);
+        setReviews(response.data); // Assuming response data contains the reviews
+      } catch (err) {
+        setError("Ошибка при загрузке отзывов");
+        console.error(err);
+      } finally {
+        setLoadingReviews(false); // stop loading once the request is done
+      }
+    };
+
+    fetchReviews();
+  }, [toilet.id]); // Dependency array ensures fetch happens when the toilet id changes
 
   return (
     <Stack>
       <Text size="sm" color="dimmed">
         Координаты: {toilet.point}
       </Text>
+
+      {/* Handle loading and error */}
+      {loadingReviews && <Loader />}
+      {error && <Alert color="red">{error}</Alert>}
+
+      {/* Display reviews */}
+      <RatingAndReviews reviews={reviews} />
 
       <TextInput
         label="Заголовок отзыва"
@@ -147,6 +188,7 @@ function ModalContent({ toilet, onSubmit }) {
       <Button fullWidth onClick={() => onSubmit(reviewTitle, reviewText)}>
         Отправить отзыв
       </Button>
+      <Button fullWidth variant="outline" onClick={onClose}>Закрыть</Button>
     </Stack>
   );
 }

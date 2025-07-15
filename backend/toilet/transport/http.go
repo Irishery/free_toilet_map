@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/gorilla/mux"
 )
 
 func withCORS(h http.Handler) http.Handler {
@@ -42,14 +43,13 @@ func methodOnly(method string, h http.Handler) http.Handler {
 
 
 func NewHTTPHandler(e endpoint.Endpoints) http.Handler {
-	mux := http.NewServeMux()
+	mux := mux.NewRouter() // Используем mux.NewRouter(), чтобы работать с параметрами маршрута
 
-mux.Handle("/user/create", methodOnly("POST", httptransport.NewServer(
-	e.CreateUser,
-	decodeJSONRequest,
-	encodeResponse,
-)))
-
+	mux.Handle("/user/create", methodOnly("POST", httptransport.NewServer(
+		e.CreateUser,
+		decodeJSONRequest,
+		encodeResponse,
+	)))
 
 	mux.Handle("/login", httptransport.NewServer(
 		e.Login,
@@ -63,21 +63,28 @@ mux.Handle("/user/create", methodOnly("POST", httptransport.NewServer(
 		encodeResponse,
 	))
 
-    mux.Handle("/toilet/add", AuthMiddleware(httptransport.NewServer(
-    e.AddToilet,
-    decodeJSONToilet,
-    encodeResponse,
-)))
-
+	mux.Handle("/toilet/add", AuthMiddleware(httptransport.NewServer(
+		e.AddToilet,
+		decodeJSONToilet,
+		encodeResponse,
+	)))
 
 	mux.Handle("/review/add", AuthMiddleware(httptransport.NewServer(
-	e.AddReview,
-	decodeJSONReview,
-	encodeResponse,
-)))
+		e.AddReview,
+		decodeJSONReview,
+		encodeResponse,
+	)))
+
+	// Используем правильный маршрут
+	mux.Handle("/toilet/{toiletID}/reviews", methodOnly("GET", httptransport.NewServer(
+		e.GetReviewsByToilet,   // Используем конечную точку для получения отзывов
+		decodeJSONToiletID,     // Декодируем ID туалета
+		encodeResponse,         // Функция для кодирования ответа
+	)))
 
 	return withCORS(mux)
 }
+
 
 func decodeJSONRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req map[string]string
@@ -103,4 +110,14 @@ func decode(r *http.Request, target interface{}) (interface{}, error) {
 
 func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
 	return json.NewEncoder(w).Encode(response)
+}
+
+
+// Функция декодирования ID туалета из URL
+func decodeJSONToiletID(_ context.Context, r *http.Request) (interface{}, error) {
+    vars := mux.Vars(r)  // Извлекаем переменные из URL
+    toiletID := vars["toiletID"]
+	log.Println("Toilet ID:", toiletID)
+
+    return toiletID, nil  // Возвращаем ID туалета
 }

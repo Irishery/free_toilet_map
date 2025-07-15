@@ -70,3 +70,24 @@ func (r *PostgresRepository) AddReview(review models.Review) error {
     _, err := r.db.Exec(query, review.UserID, review.ToiletID, review.Title, review.ReviewText, review.Score)
     return err
 }
+
+
+func (r *PostgresRepository) GetReviewsByToilet(toiletID int) ([]models.Review, error) {
+    query := `SELECT id, user_id, toilet_id, title, review_text, score FROM reviews WHERE toilet_id = $1`
+    rows, err := r.db.Query(query, toiletID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var reviews []models.Review
+    for rows.Next() {
+        var review models.Review
+        if err := rows.Scan(&review.ID, &review.UserID, &review.ToiletID, &review.Title, &review.ReviewText, &review.Score); err != nil {
+            return nil, err
+        }
+        reviews = append(reviews, review)
+    }
+
+    return reviews, nil
+}
