@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS reviews (
     toilet_id INTEGER NOT NULL REFERENCES toilets(id) ON DELETE CASCADE,
     title TEXT,
     review_text TEXT,
-    score INTEGER CHECK (score BETWEEN 1 AND 5)
+    score FLOAT CHECK (score BETWEEN 0 AND 5)
 );

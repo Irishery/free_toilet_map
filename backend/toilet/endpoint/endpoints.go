@@ -21,6 +21,7 @@ type Endpoints struct {
     AddToilet endpoint.Endpoint
 	Login       endpoint.Endpoint
 	GetReviewsByToilet  endpoint.Endpoint
+	DeleteToilet endpoint.Endpoint
 }
 
 func MakeEndpoints(svc service.Service) Endpoints {
@@ -31,6 +32,8 @@ func MakeEndpoints(svc service.Service) Endpoints {
         AddToilet: makeAddToiletEndpoint(svc),
 		Login:       makeLoginEndpoint(svc),
 		GetReviewsByToilet:   makeGetReviewsByToiletEndpoint(svc),
+		DeleteToilet: makeDeleteToiletEndpoint(svc),
+
 	}
 }
 
@@ -74,21 +77,56 @@ func makeAddToiletEndpoint(s service.Service) endpoint.Endpoint {
         if !ok {
             return nil, errors.New("invalid request format")
         }
-        toilet := *toiletPtr
 
         userID, ok := auth.GetUserID(ctx)
         if !ok {
             return nil, errors.New("unauthorized")
         }
 
+        toilet := *toiletPtr
         toilet.FounderID = userID
-        if err := s.AddToilet(toilet); err != nil {
+
+        savedToilet, err := s.AddToilet(toilet)
+        if err != nil {
             return nil, err
         }
 
-        return map[string]string{"status": "ok"}, nil
+        return map[string]interface{}{
+            "id":    savedToilet.ID,
+			"founder_id": savedToilet.FounderID,
+            "name":  savedToilet.Name,
+            "point": savedToilet.Point,
+        }, nil
     }
 }
+
+func makeDeleteToiletEndpoint(s service.Service) endpoint.Endpoint {
+    return func(ctx context.Context, request interface{}) (interface{}, error) {
+        reqMap, ok := request.(map[string]interface{})
+        if !ok {
+            return nil, errors.New("invalid request format")
+        }
+
+        idFloat, ok := reqMap["id"].(float64) // JSON числа приходят как float64
+        if !ok {
+            return nil, errors.New("invalid id format")
+        }
+        toiletID := int(idFloat)
+
+        userID, ok := auth.GetUserID(ctx)
+        if !ok {
+            return nil, errors.New("unauthorized")
+        }
+
+        err := s.DeleteToilet(toiletID, userID)
+        if err != nil {
+            return nil, err
+        }
+
+        return map[string]string{"status": "deleted"}, nil
+    }
+}
+
 
 func makeCreateUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {

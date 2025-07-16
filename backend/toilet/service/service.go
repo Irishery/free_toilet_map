@@ -12,8 +12,9 @@ type Service interface {
     ListToilets() ([]models.Toilet, error)
     AddReview(review models.Review) error
     GetUserByUsername(username string) (models.User, error)
-    AddToilet(toilet models.Toilet) error 
+    AddToilet(toilet models.Toilet) (models.Toilet, error)
     GetReviewsByToilet(toiletID int) ([]models.Review, error) 
+    DeleteToilet(toiletID, userID int) (error)
 }
 
 
@@ -26,8 +27,12 @@ func (s *ToiletService) GetUserByUsername(username string) (models.User, error) 
     return s.repo.GetUserByUsername(username)
 }
 
-func (s *ToiletService) AddToilet(toilet models.Toilet) error {
+func (s *ToiletService) AddToilet(toilet models.Toilet) (models.Toilet, error) {
     return s.repo.AddToilet(toilet)
+}
+
+func (s *ToiletService) DeleteToilet(toiletID, userID int) error {
+    return s.repo.DeleteToilet(toiletID, userID)
 }
 
 

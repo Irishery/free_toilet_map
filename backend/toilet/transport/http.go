@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"free_toilet_map/toilet/endpoint"
 	models "free_toilet_map/toilet/model"
 	"log"
@@ -15,10 +16,9 @@ import (
 func withCORS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-		// Если это preflight-запрос от браузера (OPTIONS), сразу отвечаем 200
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -31,7 +31,7 @@ func withCORS(h http.Handler) http.Handler {
 
 func methodOnly(method string, h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Incoming:", r.Method, r.URL.Path) // ← Добавь это
+		log.Println("Incoming:", r.Method, r.URL.Path)
 		if r.Method != method {
 			http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 			return
@@ -43,7 +43,7 @@ func methodOnly(method string, h http.Handler) http.Handler {
 
 
 func NewHTTPHandler(e endpoint.Endpoints) http.Handler {
-	mux := mux.NewRouter() // Используем mux.NewRouter(), чтобы работать с параметрами маршрута
+	mux := mux.NewRouter()
 
 	mux.Handle("/user/create", methodOnly("POST", httptransport.NewServer(
 		e.CreateUser,
@@ -81,6 +81,13 @@ func NewHTTPHandler(e endpoint.Endpoints) http.Handler {
 		decodeJSONToiletID,     // Декодируем ID туалета
 		encodeResponse,         // Функция для кодирования ответа
 	)))
+
+	mux.Handle("/toilet/delete", AuthMiddleware(httptransport.NewServer(
+    e.DeleteToilet,  // Новый endpoint для удаления туалета
+    decodeJSONDeleteToilet,  // Декодирование запроса (простой объект с ID туалета)
+    encodeResponse,  // Кодирование ответа
+)))
+
 
 	return withCORS(mux)
 }
@@ -121,3 +128,20 @@ func decodeJSONToiletID(_ context.Context, r *http.Request) (interface{}, error)
 
     return toiletID, nil  // Возвращаем ID туалета
 }
+
+func decodeJSONDeleteToilet(_ context.Context, r *http.Request) (interface{}, error) {
+    var req map[string]interface{}  // Декодируем запрос как map[string]interface{}
+    _, err := decode(r, &req)  // Получаем оба возвращаемых значения от decode
+    if err != nil {
+        return nil, err  // Если произошла ошибка при декодировании, возвращаем её
+    }
+
+    // Проверяем, что поле "id" существует и это число
+    if id, ok := req["id"].(float64); ok {  // Проверяем, что id передан как число
+        return map[string]int{"id": int(id)}, nil  // Возвращаем id как int
+    }
+
+    // Если id отсутствует или не в нужном формате, возвращаем ошибку
+    return nil, errors.New("invalid or missing 'id' field")
+}
+

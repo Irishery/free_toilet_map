@@ -55,14 +55,42 @@ func (r *PostgresRepository) GetAllToilets() ([]models.Toilet, error) {
     return toilets, nil
 }
 
-func (r *PostgresRepository) AddToilet(toilet models.Toilet) error {
-    _, err := r.db.Exec(`
+func (r *PostgresRepository) AddToilet(toilet models.Toilet) (models.Toilet, error) {
+    query := `
         INSERT INTO toilets (founder_id, name, point)
         VALUES ($1, $2, $3)
-    `, toilet.FounderID, toilet.Name, toilet.Point)
+        RETURNING id
+    `
+    err := r.db.QueryRow(query, toilet.FounderID, toilet.Name, toilet.Point).Scan(&toilet.ID)
+    if err != nil {
+        return models.Toilet{}, err
+    }
 
-    return err
+    return toilet, nil
 }
+
+func (r *PostgresRepository) DeleteToilet(toiletID, userID int) error {
+    result, err := r.db.Exec(`
+        DELETE FROM toilets
+        WHERE id = $1 AND founder_id = $2
+    `, toiletID, userID)
+
+    if err != nil {
+        return err
+    }
+
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return err
+    }
+
+    if rowsAffected == 0 {
+        return errors.New("not authorized or toilet not found")
+    }
+
+    return nil
+}
+
 
 
 func (r *PostgresRepository) AddReview(review models.Review) error {

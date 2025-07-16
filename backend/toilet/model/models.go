@@ -20,5 +20,5 @@ type Review struct {
     ToiletID   int    `json:"toilet_id"`
     Title      string `json:"title"`
     ReviewText string `json:"review_text"`
-    Score      int    `json:"score"`
+    Score      float32    `json:"score"`
 }
