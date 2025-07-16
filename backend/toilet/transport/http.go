@@ -114,8 +114,8 @@ func decodeJSONReview(_ context.Context, r *http.Request) (interface{}, error) {
 }
 
 func decodeJSONToilet(_ context.Context, r *http.Request) (interface{}, error) {
-    var toilet models.Toilet
-    return decode(r, &toilet)
+	var toilet models.Toilet
+	return decode(r, &toilet)
 }
 
 func decode(r *http.Request, target interface{}) (interface{}, error) {
@@ -131,27 +131,26 @@ func encodeResponse(_ context.Context, w http.ResponseWriter, response interface
 
 // Decode toilet ID from URL
 func decodeJSONToiletID(_ context.Context, r *http.Request) (interface{}, error) {
-    vars := mux.Vars(r)  // Extract variables from URL
-    toiletID := vars["toiletID"]
+	vars := mux.Vars(r) // Extract variables from URL
+	toiletID := vars["toiletID"]
 
-    return toiletID, nil  // Return the toilet ID
+	return toiletID, nil // Return the toilet ID
 }
 
 // Decode delete toilet request
 func decodeJSONDeleteToilet(_ context.Context, r *http.Request) (interface{}, error) {
-    var req map[string]interface{}  // Используем map[string]interface{} для гибкости
-    _, err := decode(r, &req)         // Декодируем запрос
-    if err != nil {
-        log.Printf("Failed to decode request: %v\n", err)
-        return nil, err  // Если произошла ошибка при декодировании, возвращаем её
-    }
+	var req map[string]interface{} // Используем map[string]interface{} для гибкости
+	_, err := decode(r, &req)      // Декодируем запрос
+	if err != nil {
+		log.Printf("Failed to decode request: %v\n", err)
+		return nil, err // Если произошла ошибка при декодировании, возвращаем её
+	}
 
-    // Проверяем, что в запросе есть поле "id" и это число
-    if id, ok := req["id"].(float64); ok {  // Проверяем, что id - это число (float64)
-        return map[string]int{"id": int(id)}, nil  // Преобразуем id в int и возвращаем
-    }
+	// Проверяем, что в запросе есть поле "id" и это число
+	if id, ok := req["id"].(float64); ok { // Проверяем, что id - это число (float64)
+		return map[string]int{"id": int(id)}, nil // Преобразуем id в int и возвращаем
+	}
 
-    log.Println("Invalid or missing 'id' field in request")
-    return nil, errors.New("invalid or missing 'id' field")  // Если id не существует или не верный формат
+	log.Println("Invalid or missing 'id' field in request")
+	return nil, errors.New("invalid or missing 'id' field") // Если id не существует или не верный формат
 }
-

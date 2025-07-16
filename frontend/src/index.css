@@ -5,3 +5,7 @@
 .mantine-Modal-inner {
   z-index: 9999 !important;
 }
+
+.mantine-Select-dropdown {
+  z-index: 10000 !important;
+}

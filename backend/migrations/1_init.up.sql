@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS toilets (
     id SERIAL PRIMARY KEY,
     founder_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
-    point TEXT NOT NULL
+    point TEXT NOT NULL,
+    type TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -18,5 +19,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     toilet_id INTEGER NOT NULL REFERENCES toilets(id) ON DELETE CASCADE,
     title TEXT,
     review_text TEXT,
-    score FLOAT CHECK (score BETWEEN 0 AND 5)
+    score FLOAT CHECK (score BETWEEN 0 AND 5),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
 );

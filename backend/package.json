@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@mantine/core": "^8.1.3"
+  }
+}
