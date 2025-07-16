@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	models "free_toilet_map/toilet/model"
 )
 
@@ -10,10 +11,12 @@ type PostgresRepository struct {
     db *sql.DB
 }
 
+// NewPostgresRepoWithDB creates a new repository using the provided DB connection
 func NewPostgresRepoWithDB(db *sql.DB) *PostgresRepository {
     return &PostgresRepository{db: db}
 }
 
+// CreateUser creates a new user in the database
 func (r *PostgresRepository) CreateUser(user models.User) (models.User, error) {
     query := `INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id`
     err := r.db.QueryRow(query, user.Username, user.Password).Scan(&user.ID)
@@ -26,6 +29,7 @@ func (r *PostgresRepository) CreateUser(user models.User) (models.User, error) {
     return user, nil
 }
 
+// GetUserByUsername retrieves a user by their username
 func (r *PostgresRepository) GetUserByUsername(username string) (models.User, error) {
     var user models.User
     query := `SELECT id, username, password, toilets_found FROM users WHERE username = $1`
@@ -36,6 +40,7 @@ func (r *PostgresRepository) GetUserByUsername(username string) (models.User, er
     return user, err
 }
 
+// GetAllToilets retrieves all toilets from the database
 func (r *PostgresRepository) GetAllToilets() ([]models.Toilet, error) {
     query := `SELECT id, founder_id, name, point FROM toilets`
     rows, err := r.db.Query(query)
@@ -55,6 +60,7 @@ func (r *PostgresRepository) GetAllToilets() ([]models.Toilet, error) {
     return toilets, nil
 }
 
+// AddToilet adds a new toilet to the database
 func (r *PostgresRepository) AddToilet(toilet models.Toilet) (models.Toilet, error) {
     query := `
         INSERT INTO toilets (founder_id, name, point)
@@ -69,6 +75,7 @@ func (r *PostgresRepository) AddToilet(toilet models.Toilet) (models.Toilet, err
     return toilet, nil
 }
 
+// DeleteToilet deletes a toilet from the database
 func (r *PostgresRepository) DeleteToilet(toiletID, userID int) error {
     result, err := r.db.Exec(`
         DELETE FROM toilets
@@ -91,15 +98,20 @@ func (r *PostgresRepository) DeleteToilet(toiletID, userID int) error {
     return nil
 }
 
-
-
 func (r *PostgresRepository) AddReview(review models.Review) error {
-    query := `INSERT INTO reviews (user_id, toilet_id, title, review_text, score) VALUES ($1, $2, $3, $4, $5)`
+    query := `
+        INSERT INTO reviews (user_id, toilet_id, title, review_text, score) 
+        VALUES ($1, $2, $3, $4, $5)
+    `
     _, err := r.db.Exec(query, review.UserID, review.ToiletID, review.Title, review.ReviewText, review.Score)
-    return err
+    if err != nil {
+        return fmt.Errorf("could not insert review: %w", err)
+    }
+
+    return nil
 }
 
-
+// GetReviewsByToilet retrieves all reviews for a specific toilet
 func (r *PostgresRepository) GetReviewsByToilet(toiletID int) ([]models.Review, error) {
     query := `SELECT id, user_id, toilet_id, title, review_text, score FROM reviews WHERE toilet_id = $1`
     rows, err := r.db.Query(query, toiletID)
@@ -119,3 +131,5 @@ func (r *PostgresRepository) GetReviewsByToilet(toiletID int) ([]models.Review, 
 
     return reviews, nil
 }
+
+

@@ -1,74 +1,61 @@
 package service
 
 import (
+	"fmt"
 	models "free_toilet_map/toilet/model"
 	"free_toilet_map/toilet/repository"
-
-	"golang.org/x/crypto/bcrypt"
+	"log"
 )
 
-type Service interface {
-    CreateUser(username, password string) (models.User, error)
-    ListToilets() ([]models.Toilet, error)
-    AddReview(review models.Review) error
-    GetUserByUsername(username string) (models.User, error)
-    AddToilet(toilet models.Toilet) (models.Toilet, error)
-    GetReviewsByToilet(toiletID int) ([]models.Review, error) 
-    DeleteToilet(toiletID, userID int) (error)
+type Service struct {
+    Repo repository.PostgresRepository
+}
+
+// NewService creates a new service instance with the provided repository
+func NewService(repo repository.PostgresRepository) *Service {
+    return &Service{Repo: repo}
+}
+
+// CreateUser creates a new user by interacting with the repository
+func (s *Service) CreateUser(user models.User) (models.User, error) {
+    return s.Repo.CreateUser(user)
+}
+
+// GetUserByUsername retrieves a user by their username
+func (s *Service) GetUserByUsername(username string) (models.User, error) {
+    return s.Repo.GetUserByUsername(username)
+}
+
+// ListToilets retrieves all toilets from the repository
+func (s *Service) ListToilets() ([]models.Toilet, error) {
+    return s.Repo.GetAllToilets()
+}
+
+// AddToilet adds a new toilet by interacting with the repository
+func (s *Service) AddToilet(toilet models.Toilet) (models.Toilet, error) {
+    return s.Repo.AddToilet(toilet)
+}
+
+// DeleteToilet deletes a toilet by interacting with the repository
+func (s *Service) DeleteToilet(toiletID, userID int) error {
+    log.Println("FLAG4")
+    return s.Repo.DeleteToilet(toiletID, userID)
+}
+
+// AddReview adds a review for a toilet
+func (s *Service) AddReview(review models.Review) error {
+
+	// Ensure all required fields are provided
+	if review.UserID == 0 || review.ToiletID == 0 {
+		return fmt.Errorf("missing required fields")
+	}
+
+	// Add review to the database
+	return s.Repo.AddReview(review)
 }
 
 
-
-type ToiletService struct {
-    repo repository.PostgresRepository
-}
-
-func (s *ToiletService) GetUserByUsername(username string) (models.User, error) {
-    return s.repo.GetUserByUsername(username)
-}
-
-func (s *ToiletService) AddToilet(toilet models.Toilet) (models.Toilet, error) {
-    return s.repo.AddToilet(toilet)
-}
-
-func (s *ToiletService) DeleteToilet(toiletID, userID int) error {
-    return s.repo.DeleteToilet(toiletID, userID)
-}
-
-
-func NewService(repo repository.PostgresRepository) Service {
-    return &ToiletService{repo: repo}
-}
-
-func (s *ToiletService) CreateUser(username, password string) (models.User, error) {
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-    if err != nil {
-        return models.User{}, err
-    }
-
-    user := models.User{
-        Username: username,
-        Password: string(hashedPassword),
-    }
-
-    user, err = s.repo.CreateUser(user)
-    if err != nil {
-        return models.User{}, err
-    }
-
-    return user, nil
-}
-
-
-
-func (s *ToiletService) ListToilets() ([]models.Toilet, error) {
-    return s.repo.GetAllToilets()
-}
-
-func (s *ToiletService) AddReview(r models.Review) error {
-    return s.repo.AddReview(r)
-}
-
-func (s *ToiletService) GetReviewsByToilet(toiletID int) ([]models.Review, error) {
-    return s.repo.GetReviewsByToilet(toiletID)
+// GetReviewsByToilet retrieves all reviews for a specific toilet
+func (s *Service) GetReviewsByToilet(toiletID int) ([]models.Review, error) {
+    return s.Repo.GetReviewsByToilet(toiletID)
 }
