@@ -12,6 +12,7 @@
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.6.3",
     "react-stars": "^2.2.5",
+    "three": "^0.178.0",
     "vite": "^7.0.4"
   },
   "name": "frontend",
