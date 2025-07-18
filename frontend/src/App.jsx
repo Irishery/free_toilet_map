@@ -1,4 +1,3 @@
-// src/App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ModalsProvider } from "@mantine/modals";
 import Login from "./pages/Login";
@@ -13,6 +12,8 @@ export default function App() {
         <Route path="/" element={<Navigate to="/dashboard" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        
+        {/* Защищённый маршрут Dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -21,6 +22,7 @@ export default function App() {
             </PrivateRoute>
           }
         />
+        
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </ModalsProvider>

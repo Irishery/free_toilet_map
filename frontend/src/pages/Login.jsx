@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import {
   Container,
@@ -35,11 +34,14 @@ export default function Login() {
       if (!res.ok) throw new Error("Ошибка входа");
 
       const data = await res.json();
+
+      // Сохраняем токен в localStorage
       localStorage.setItem("token", data.token);
-      showNotification({ color: "green", message: "Успешный вход" });
+
+      // Перенаправляем на страницу Dashboard
       navigate("/dashboard");
-    } catch (err) {
-      showNotification({ color: "red", message: "Неверные данные" });
+    } catch (error) {
+      showNotification({ color: "red", message: error.message });
     }
   };
 
