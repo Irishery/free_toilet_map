@@ -23,6 +23,15 @@ const userIcon = new L.Icon({
   popupAnchor: [0, -15],
 });
 
+function getAddressFromCoordinates(lat, lng, callback) {
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+    .then((response) => response.json())
+    .then((data) => {
+      callback(data.display_name);
+    })
+    .catch((error) => console.error("Ошибка получения адреса:", error));
+}
+
 // MapClickHandler component to handle map clicks
 export function MapClickHandler({ onClick }) {
   useMapEvent("click", onClick);
@@ -43,13 +52,24 @@ function SetMapCenter({ position }) {
 }
 
 export default function MapComponent({ toilets, position, onToiletClick, onAddToilet }) {
+  const [address, setAddress] = useState(null);
+
   const handleMapClick = (e) => {
     const { lat, lng } = e.latlng;
-    onAddToilet(lat, lng);
+
+    getAddressFromCoordinates(lat, lng, (address) => {
+      setAddress(address);
+      console.log(address)
+      onAddToilet(lat, lng, address);  // Передаем координаты и адрес в родительский компонент
+    });
   };
 
   return (
-    <MapContainer center={[55.75, 37.61]} zoom={12} style={{ height: 600 }}>
+    <MapContainer
+      center={[55.75, 37.61]}
+      zoom={12}
+      style={{ height: "100vh", width: "100%", padding: 0 }}
+    >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution="&copy; OpenStreetMap contributors"

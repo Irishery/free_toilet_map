@@ -42,7 +42,7 @@ func (r *PostgresRepository) GetUserByUsername(username string) (models.User, er
 
 // GetAllToilets retrieves all toilets from the database
 func (r *PostgresRepository) GetAllToilets() ([]models.Toilet, error) {
-	query := `SELECT id, founder_id, name, point, type FROM toilets`
+	query := `SELECT id, founder_id, name, point, type, gender, address FROM toilets`
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (r *PostgresRepository) GetAllToilets() ([]models.Toilet, error) {
 	var toilets []models.Toilet
 	for rows.Next() {
 		var t models.Toilet
-		if err := rows.Scan(&t.ID, &t.FounderID, &t.Name, &t.Point, &t.Type); err != nil {
+		if err := rows.Scan(&t.ID, &t.FounderID, &t.Name, &t.Point, &t.Type, &t.Gender, &t.Address); err != nil {
 			return nil, err
 		}
 		toilets = append(toilets, t)
@@ -63,11 +63,11 @@ func (r *PostgresRepository) GetAllToilets() ([]models.Toilet, error) {
 // AddToilet adds a new toilet to the database
 func (r *PostgresRepository) AddToilet(toilet models.Toilet) (models.Toilet, error) {
 	query := `
-        INSERT INTO toilets (founder_id, name, point, type)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO toilets (founder_id, name, point, type, gender, address)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id
     `
-	err := r.db.QueryRow(query, toilet.FounderID, toilet.Name, toilet.Point, toilet.Type).Scan(&toilet.ID)
+	err := r.db.QueryRow(query, toilet.FounderID, toilet.Name, toilet.Point, toilet.Type, toilet.Gender, toilet.Address).Scan(&toilet.ID)
 	if err != nil {
 		return models.Toilet{}, err
 	}

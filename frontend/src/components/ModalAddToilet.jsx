@@ -3,10 +3,12 @@ import { Stack, TextInput, Select, Button } from "@mantine/core";
 
 export function ModalAddToilet({ lat, lng, onSubmit, onClose }) {
   const [name, setName] = useState("");
-  const [toiletType, setToiletType] = useState("male"); // Стейт для типа туалета
+  const [toiletGender, setToiletGender] = useState("male"); // Стейт для типа туалета
+  const [toiletType, setToiletType] = useState("free"); // Стейт для типа туалета
+
 
   const handleSubmit = () => {
-    onSubmit(name, toiletType); // Передаем имя туалета и тип
+    onSubmit(name,toiletGender, toiletType); // Передаем имя туалета и тип
   };
 
   return (
@@ -18,13 +20,24 @@ export function ModalAddToilet({ lat, lng, onSubmit, onClose }) {
         onChange={(e) => setName(e.currentTarget.value)}
       />
       <Select
+        label="Гендер"
+        placeholder="Выберите гендер"
+        value={toiletGender}
+        onChange={setToiletGender}
+        data={[
+          { value: 'male', label: 'Мужской' },
+          { value: 'female', label: 'Женский' },
+        ]}
+        style={{ zIndex: 9999 }}
+      />
+      <Select
         label="Тип туалета"
         placeholder="Выберите тип"
         value={toiletType}
         onChange={setToiletType}
         data={[
-          { value: 'male', label: 'Мужской' },
-          { value: 'female', label: 'Женский' },
+          { value: 'free', label: 'Бесплатный' },
+          { value: 'paid', label: 'Платный' },
         ]}
         style={{ zIndex: 9999 }}
       />

@@ -48,96 +48,103 @@ export default function Login() {
     }
   };
 
-useEffect(() => {
-  // Initialize Three.js scene
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-
-  // Add lighting
-  const ambientLight = new THREE.AmbientLight(0x404040, 2);
-  scene.add(ambientLight);
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-  directionalLight.position.set(5, 5, 5).normalize();
-  scene.add(directionalLight);
-
-  // Load the toilet model using GLTFLoader
-  const loader = new GLTFLoader();
-  let toilet;
-  loader.load(
-    '/models/toilet.glb', // Ensure this path is correct
-    (gltf) => {
-      toilet = gltf.scene;
-      scene.add(toilet);
-      toilet.scale.set(2, 2, 2); // Adjust size of the model
-    },
-    undefined,
-    (error) => {
-      console.error('GLTF Model Loading Error:', error);
-      showNotification({ color: 'red', message: 'Error loading the 3D model.' });
-    }
-  );
-
-  // Set camera position
-  camera.position.z = 5;
-
-  // Handle window resize
-  const handleResize = () => {
+  useEffect(() => {
+    // Initialize Three.js scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-  };
+    document.body.appendChild(renderer.domElement);
 
-  window.addEventListener('resize', handleResize);
+    // Set black background
+    scene.background = new THREE.Color(0x000000);
 
-  // Animate the scene
-  const animate = function () {
-    requestAnimationFrame(animate);
-    if (toilet) {
-      toilet.rotation.y += 0.01;  // Rotate the scene for a dynamic background
-    }
-    renderer.render(scene, camera);
-  };
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 2);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5).normalize();
+    scene.add(directionalLight);
 
-  animate();
+    // Load the toilet model using GLTFLoader
+    const loader = new GLTFLoader();
+    let toilet;
+    loader.load(
+      '/models/toilet.glb', // Ensure this path is correct
+      (gltf) => {
+        toilet = gltf.scene;
+        scene.add(toilet);
+        toilet.scale.set(2, 2, 2); // Adjust size of the model
+      },
+      undefined,
+      (error) => {
+        console.error('GLTF Model Loading Error:', error);
+        showNotification({ color: 'red', message: 'Error loading the 3D model.' });
+      }
+    );
 
-  // Cleanup on component unmount
-  return () => {
-    window.removeEventListener('resize', handleResize);
+    // Set camera position
+    camera.position.z = 5;
 
-    // Dispose of geometry and material to avoid memory leaks
-    if (toilet) {
-      toilet.traverse((child) => {
-        if (child.isMesh) {
-          child.geometry.dispose();
-          if (child.material.isMaterial) {
-            child.material.dispose();
+    // Handle window resize
+    const handleResize = () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    // Animate the scene
+    const animate = function () {
+      requestAnimationFrame(animate);
+
+      if (toilet) {
+        // Make the model float by rotating and slightly moving it in space
+        toilet.rotation.y += 0.01; // Rotate the model for dynamic movement
+        toilet.position.x = Math.sin(toilet.rotation.y) * 2; // Horizontal oscillation (floating effect)
+        toilet.position.y = Math.cos(toilet.rotation.y) * 2; // Vertical oscillation (floating effect)
+      }
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    // Cleanup on component unmount
+    return () => {
+      window.removeEventListener('resize', handleResize);
+
+      // Dispose of geometry and material to avoid memory leaks
+      if (toilet) {
+        toilet.traverse((child) => {
+          if (child.isMesh) {
+            child.geometry.dispose();
+            if (child.material.isMaterial) {
+              child.material.dispose();
+            }
           }
-        }
-      });
-    }
+        });
+      }
 
-    // Ensure renderer and scene are cleaned up
-    renderer.dispose();
-    scene.clear(); // Remove all objects from the scene
-    if (canvasRef.current) {
-      canvasRef.current.remove(); // Remove canvas element
-    }
-  };
-}, []); // Empty dependency array ensures this effect runs once when the component mounts
+      // Ensure renderer and scene are cleaned up
+      renderer.dispose();
+      scene.clear(); // Remove all objects from the scene
+      if (canvasRef.current) {
+        canvasRef.current.remove(); // Remove canvas element
+      }
+    };
+  }, []); // Empty dependency array ensures this effect runs once when the component mounts
 
   return (
     <div style={{ position: "relative", display: 'flex', minHeight: '100vh', justifyContent: 'center', alignItems: 'center' }}>
       <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, zIndex: -1 }} />
       
-      <Container size="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%', padding: '20px' }}>
-        <Paper padding="xl" radius="md" shadow="xs" withBorder style={{ width: '100%', backgroundColor: 'rgba(255, 255, 255, 0.8)' }}>
-          <Title order={2} align="center" mb="xl" style={{ color: '#2C3E50' }}>Войти</Title>
+      <Container className="signin" size="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%', padding: '20px' }}>
+        <Paper padding="xl" radius="md" shadow="xs" style={{ width: '100%' }}>
+          <Title order={2} align="center" mb="xl" style={{ color: 'white' }}>Войти</Title>
           
-          {/* Use 'direction="column"' to ensure inputs are stacked vertically */}
-          <Group direction="column" spacing="sm" grow>
+          <Group className="signinInputs" style={{ display: 'flex', flexDirection: 'column'}} direction="column" spacing="sm" grow>
             <TextInput
               label="Имя пользователя"
               placeholder="Введите ваше имя"

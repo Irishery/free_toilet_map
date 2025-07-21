@@ -96,44 +96,45 @@ func makeAddToiletEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		return map[string]interface{}{
-			"id":        savedToilet.ID,
+			"id":         savedToilet.ID,
 			"founder_id": savedToilet.FounderID,
-			"name":      savedToilet.Name,
-			"point":     savedToilet.Point,
+			"name":       savedToilet.Name,
+			"point":      savedToilet.Point,
+			"gender":     savedToilet.Gender,
+			"type":       savedToilet.Type,
+			"address":    savedToilet.Address,
 		}, nil
 	}
 }
 func makeDeleteToiletEndpoint(s service.Service) endpoint.Endpoint {
-    return func(ctx context.Context, request interface{}) (interface{}, error) {
-        // Декодируем запрос как map[string]int
-        reqMap, ok := request.(map[string]int)  // Мы ожидаем, что запрос будет map[string]int
-        if !ok {
-            log.Printf("Failed to cast request to map[string]int. Got: %T\n", request)
-            return nil, errors.New("invalid request format")
-        }
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// Декодируем запрос как map[string]int
+		reqMap, ok := request.(map[string]int) // Мы ожидаем, что запрос будет map[string]int
+		if !ok {
+			log.Printf("Failed to cast request to map[string]int. Got: %T\n", request)
+			return nil, errors.New("invalid request format")
+		}
 
-		toiletID := reqMap["id"]  // Получаем id как целое число
+		toiletID := reqMap["id"] // Получаем id как целое число
 
-        // Получаем userID из контекста
-        userID, ok := auth.GetUserID(ctx)
-        if !ok {
-            log.Println("User not authenticated, unable to get user ID.")
-            return nil, errors.New("unauthorized")
-        }
+		// Получаем userID из контекста
+		userID, ok := auth.GetUserID(ctx)
+		if !ok {
+			log.Println("User not authenticated, unable to get user ID.")
+			return nil, errors.New("unauthorized")
+		}
 
-        // Пытаемся удалить туалет
-        err := s.DeleteToilet(toiletID, userID)
-        if err != nil {
-            log.Printf("Error deleting toilet with ID %d: %v", toiletID, err)
-            return nil, err
-        }
+		// Пытаемся удалить туалет
+		err := s.DeleteToilet(toiletID, userID)
+		if err != nil {
+			log.Printf("Error deleting toilet with ID %d: %v", toiletID, err)
+			return nil, err
+		}
 
-        // Возвращаем успешный ответ
-        return map[string]string{"status": "deleted"}, nil
-    }
+		// Возвращаем успешный ответ
+		return map[string]string{"status": "deleted"}, nil
+	}
 }
-
-
 
 // CreateUser Endpoint
 // CreateUser Endpoint
@@ -175,8 +176,6 @@ func makeCreateUserEndpoint(s service.Service) endpoint.Endpoint {
 	}
 }
 
-
-
 // ListToilets Endpoint
 func makeListToiletsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, _ interface{}) (interface{}, error) {
@@ -188,7 +187,7 @@ func makeListToiletsEndpoint(s service.Service) endpoint.Endpoint {
 func makeAddReviewEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		reviewPtr := request.(*models.Review)
-		
+
 		userID, ok := auth.GetUserID(ctx)
 		if !ok {
 			return nil, errors.New("unauthorized")
@@ -208,7 +207,7 @@ func makeAddReviewEndpoint(s service.Service) endpoint.Endpoint {
 // GetReviewsByToilet Endpoint
 func makeGetReviewsByToiletEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		toiletID, ok := request.(string) 
+		toiletID, ok := request.(string)
 		if !ok {
 			return nil, errors.New("invalid request format")
 		}

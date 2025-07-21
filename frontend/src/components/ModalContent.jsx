@@ -44,7 +44,10 @@ export function ModalContent({ toilet, userId, onSubmit, onDelete, onClose }) {
   return (
     <Stack px="md">
       <Text size="sm" color="dimmed">Координаты: {toilet.point}</Text>
-      <Text size="sm" color="dimmed">Тип туалета: {toilet.type === 'male' ? 'Мужской' : 'Женский'}</Text>
+      <Text size="sm" color="dimmed">Гендер: {toilet.gender == 'male' ? 'Мужской' : 'Женский'}</Text>
+      <Text size="sm" color="dimmed">Тип туалета: {toilet.type == 'free' ? 'Бесплатный' : 'Платный'}</Text>
+      <Text size="sm" color="dimmed">Адрес: {toilet.address || ""}</Text>
+
 
       {loadingReviews && <Loader />}
       {error && <Alert color="red">{error}</Alert>}

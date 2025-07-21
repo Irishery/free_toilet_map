@@ -15,6 +15,8 @@ type Toilet struct {
 	Name      string `json:"name"`
 	Point     string `json:"point"` // "lat,lng"
 	Type      string `json:"type"`
+	Gender    string `json:"gender"`
+	Address   string `json:"address"`
 }
 
 type Review struct {

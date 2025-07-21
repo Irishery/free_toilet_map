@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS toilets (
     founder_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     point TEXT NOT NULL,
-    type TEXT NOT NULL
+    type TEXT NOT NULL,
+    gender TEXT NOT NULL,
+    address TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS reviews (

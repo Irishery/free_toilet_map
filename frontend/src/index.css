@@ -9,3 +9,40 @@
 .mantine-Select-dropdown {
   z-index: 10000 !important;
 }
+
+.signinInputs > div {
+  min-width: 35%;
+}
+
+.signupInputs > div {
+  min-width: 35%;
+}
+
+.signin div {
+  background: none;
+  color: white;
+}
+
+.signin div > input {
+  background: white;
+  color: black;
+}
+
+.signup div {
+  background: none;
+  color: white;
+}
+
+.signup div > input {
+  background: white;
+  color: black;
+}
+
+.mantine-Container-root {
+  padding: 0 !important;
+}
+
+.leaflet-container {
+  padding: 0 !important;
+  margin: 0 !important;
+}

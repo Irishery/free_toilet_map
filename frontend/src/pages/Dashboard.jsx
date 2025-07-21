@@ -44,7 +44,7 @@ export default function Dashboard() {
   }, []);
 
   // Открыть модальное окно для добавления нового туалета
-  const handleAddToilet = (lat, lng) => {
+  const handleAddToilet = (lat, lng, address) => {
     modals.open({
       title: "Добавить новый туалет",
       size: "lg",
@@ -53,7 +53,7 @@ export default function Dashboard() {
         <ModalAddToilet
           lat={lat}
           lng={lng}
-          onSubmit={(name, toiletType) => submitNewToilet(name, lat, lng, toiletType)}
+          onSubmit={(name, toiletType, toiletGender) => submitNewToilet(name, lat, lng, address, toiletType, toiletGender)}
           onClose={() => modals.closeAll()}
         />
       ),
@@ -61,12 +61,14 @@ export default function Dashboard() {
   };
 
   // Добавление нового туалета
-  const submitNewToilet = async (name, lat, lng, toiletType) => {
+  const submitNewToilet = async (name, lat, lng, address, toiletGender, toiletType) => {
     try {
       const response = await api.post("/toilet/add", {
         name,
         point: `${lat},${lng}`,
+        gender: toiletGender,
         type: toiletType,
+        address: address,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -140,8 +142,8 @@ export default function Dashboard() {
   };
 
   return (
-    <Container fluid p="md">
-      <Title order={2} mb="md">Карта туалетов</Title>
+    <Container fluid p="md" style={{padding: 0}}>
+      {/* <Title order={2} mb="md">Карта туалетов</Title> */}
       {loading && <Loader />} 
       {error && <Alert color="red">{error}</Alert>}
       {errorMsg && <Alert color="red">{errorMsg}</Alert>}
