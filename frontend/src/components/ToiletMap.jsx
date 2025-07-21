@@ -24,13 +24,22 @@ const userIcon = new L.Icon({
 });
 
 function getAddressFromCoordinates(lat, lng, callback) {
-  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
+  const apiKey = '462978eb457d480e9723dc9c42ab2ec6';
+  const apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lng}&key=${apiKey}`;
+
+  fetch(apiUrl)
     .then((response) => response.json())
     .then((data) => {
-      callback(data.display_name);
+      if (data.results.length > 0) {
+        callback(data.results[0].formatted); 
+      } else {
+        console.error("Адрес не найден");
+      }
     })
     .catch((error) => console.error("Ошибка получения адреса:", error));
 }
+
+
 
 // MapClickHandler component to handle map clicks
 export function MapClickHandler({ onClick }) {

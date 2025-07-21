@@ -13,6 +13,8 @@ export default function Register() {
   const canvasRef = useRef(null);
 
   const handleRegister = async () => {
+    const apiUrl = process.env.VITE_API_URL || "http://localhost:8080";
+
     if (!username || !password) {
       showNotification({ color: "red", message: "Введите имя и пароль" });
       return;
@@ -21,7 +23,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8080/user/create", {
+      const res = await fetch(`${apiUrl}/user/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

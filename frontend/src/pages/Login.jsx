@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { showNotification } from "@mantine/notifications";
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import api from "../api";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -13,6 +14,8 @@ export default function Login() {
   const canvasRef = useRef(null);
 
   const handleLogin = async () => {
+    const apiUrl = process.env.VITE_API_URL || "http://localhost:8080";
+
     if (!username || !password) {
       showNotification({ color: "red", message: "Введите имя и пароль" });
       return;
@@ -21,7 +24,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8080/login", {
+      const res = await fetch(`${apiUrl}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -163,7 +166,7 @@ export default function Login() {
             />
             <Group position="apart" align="center" mb="md">
               <Anchor component="button" type="button" onClick={() => navigate("/register")}>
-                Забыли пароль?
+                Регистрация
               </Anchor>
             </Group>
             <Button

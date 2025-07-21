@@ -25,6 +25,11 @@ export default function PrivateRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Если токен действителен, показываем дочерние компоненты (например, Dashboard)
+  // Если токен действителен, редиректим на Dashboard
+  if (token) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Если все проверки прошли успешно, отдаем дочерние компоненты
   return children;
 }

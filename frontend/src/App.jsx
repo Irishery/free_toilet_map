@@ -6,14 +6,16 @@ import Dashboard from "./pages/Dashboard";
 import PrivateRoute from "./components/PrivateRoute";
 
 export default function App() {
+  const token = localStorage.getItem("token");
+
   return (
     <ModalsProvider>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/" element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
+        
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
-        {/* Защищённый маршрут Dashboard */}
+
         <Route
           path="/dashboard"
           element={
@@ -22,7 +24,7 @@ export default function App() {
             </PrivateRoute>
           }
         />
-        
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </ModalsProvider>
