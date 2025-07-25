@@ -1,0 +1,9 @@
+{
+  "build": {
+    "builder": "DOCKER_COMPOSE"
+  },
+  "deploy": {
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 300
+  }
+}
