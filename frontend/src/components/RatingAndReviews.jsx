@@ -1,34 +1,25 @@
-import { Card, Text } from "@mantine/core";
-
 export function RatingAndReviews({ reviews }) {
   const reviewList = Array.isArray(reviews) ? reviews : [];
+
   return (
-    <div
-      style={{ maxHeight: "300px", overflowY: "auto", paddingRight: "10px" }}
-    >
+    <div className="max-h-80 overflow-y-auto pr-4">
       {reviewList.length > 0 ? (
         reviewList.map((review, index) => (
-          <Card
+          <div
             key={index}
-            shadow="sm"
-            padding="lg"
-            style={{ marginBottom: "10px" }}
+            className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 mb-3 last:mb-0"
           >
-            <Text weight={500}>{review.title}</Text>
-            <Text size="sm" style={{ margin: "10px 0" }}>
-              {review.review_text}
-            </Text>
-            <Text size="sm" color="dimmed">
-              Оценка: {review.score}
-            </Text>
-            <Text size="xs" color="dimmed" style={{ marginTop: "10px" }}>
+            <h4 className="font-medium text-gray-900">{review.title}</h4>
+            <p className="text-sm text-gray-700 my-3">{review.review_text}</p>
+            <p className="text-sm text-gray-500">Оценка: {review.score}</p>
+            <p className="text-xs text-gray-500 mt-3">
               <strong>Дата отзыва:</strong>{" "}
               {new Date(review.created_at).toLocaleString()}
-            </Text>
-          </Card>
+            </p>
+          </div>
         ))
       ) : (
-        <Text>Нет отзывов</Text>
+        <p className="text-gray-600 italic">Нет отзывов</p>
       )}
     </div>
   );

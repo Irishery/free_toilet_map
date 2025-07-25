@@ -1,23 +1,22 @@
 import { useState, useRef, useEffect } from "react";
-import { Container, Title, TextInput, PasswordInput, Button, Paper, Group, Text, Anchor, Loader } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
-import { showNotification } from "@mantine/notifications";
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import api from "../api";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);  // Loading state for the button
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const canvasRef = useRef(null);
+  const animationRef = useRef(null); // Для хранения requestAnimationFrame ID
 
   const handleLogin = async () => {
     const apiUrl = process.env.VITE_API_URL || "http://localhost:8080";
 
     if (!username || !password) {
-      showNotification({ color: "red", message: "Введите имя и пароль" });
+      alert("Введите имя и пароль");
       return;
     }
 
@@ -33,80 +32,135 @@ export default function Login() {
       if (!res.ok) throw new Error("Ошибка входа");
 
       const data = await res.json();
-
-      // Save the token to localStorage
       localStorage.setItem("token", data.token);
 
-      // Explicitly clear the 3D model before navigating
-      if (canvasRef.current) {
-        canvasRef.current = null; // Clear the reference
+      // Останавливаем анимацию перед переходом
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
 
-      // Redirect to dashboard after successful login
       navigate("/dashboard");
     } catch (error) {
-      showNotification({ color: "red", message: error.message });
+      alert(error.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Initialize Three.js scene
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    if (!canvasRef.current) return;
 
-    // Set black background
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvasRef.current,
+      antialias: true,
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
     scene.background = new THREE.Color(0x000000);
 
-    // Add lighting
     const ambientLight = new THREE.AmbientLight(0x404040, 2);
     scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 5, 5).normalize();
     scene.add(directionalLight);
 
-    // Load the toilet model using GLTFLoader
     const loader = new GLTFLoader();
     let toilet;
+    let baseScale = 2;
+    let scaleDirection = 0.005;
+    let scaleMin = 1.5;
+    let scaleMax = 2.5;
+
     loader.load(
-      '/models/toilet.glb', // Ensure this path is correct
+      "/models/toilet.glb",
       (gltf) => {
         toilet = gltf.scene;
         scene.add(toilet);
-        toilet.scale.set(2, 2, 2); // Adjust size of the model
+        toilet.scale.set(baseScale, baseScale, baseScale);
       },
       undefined,
       (error) => {
-        console.error('GLTF Model Loading Error:', error);
-        showNotification({ color: 'red', message: 'Error loading the 3D model.' });
+        console.error("GLTF Model Loading Error:", error);
+        alert("Error loading the 3D model.");
       }
     );
 
-    // Set camera position
     camera.position.z = 5;
 
-    // Handle window resize
     const handleResize = () => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
+      if (renderer && camera) {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
-    // Animate the scene
+    const SPEED_MULTIPLIER = 3;
+
+    let velocity = new THREE.Vector3(
+      (Math.random() - 0.5) * 0.02 * SPEED_MULTIPLIER,
+      (Math.random() - 0.5) * 0.02 * SPEED_MULTIPLIER,
+      (Math.random() - 0.5) * 0.01 * SPEED_MULTIPLIER
+    );
+
     const animate = function () {
-      requestAnimationFrame(animate);
+      animationRef.current = requestAnimationFrame(animate);
 
       if (toilet) {
-        // Make the model float by rotating and slightly moving it in space
-        toilet.rotation.y += 0.01; // Rotate the model for dynamic movement
-        toilet.position.x = Math.sin(toilet.rotation.y) * 2; // Horizontal oscillation (floating effect)
-        toilet.position.y = Math.cos(toilet.rotation.y) * 2; // Vertical oscillation (floating effect)
+        // Rotate the toilet
+        toilet.rotation.y += 0.01;
+
+        // Move the toilet
+        toilet.position.add(velocity);
+
+        // Изменение размера модели (пульсация)
+        baseScale += scaleDirection;
+
+        if (baseScale > scaleMax || baseScale < scaleMin) {
+          scaleDirection *= -1;
+        }
+
+        toilet.scale.set(baseScale, baseScale, baseScale);
+
+        // Get bounding box of the toilet
+        const box = new THREE.Box3().setFromObject(toilet);
+        const center = box.getCenter(new THREE.Vector3());
+
+        // Convert 3D position to screen coordinates for boundary checking
+        const screenPosition = center.clone().project(camera);
+
+        // Convert to screen space coordinates
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+
+        const screenX = (screenPosition.x * screenWidth) / 2 + screenWidth / 2;
+        const screenY =
+          -((screenPosition.y * screenHeight) / 2) + screenHeight / 2;
+
+        // Check boundaries and reverse direction
+        const margin = 50;
+
+        if (screenX < margin || screenX > screenWidth - margin) {
+          velocity.x *= -1;
+        }
+
+        if (screenY < margin || screenY > screenHeight - margin) {
+          velocity.y *= -1;
+        }
+
+        if (toilet.position.z > 3 || toilet.position.z < -3) {
+          velocity.z *= -1;
+        }
       }
 
       renderer.render(scene, camera);
@@ -114,80 +168,127 @@ export default function Login() {
 
     animate();
 
-    // Cleanup on component unmount
     return () => {
-      window.removeEventListener('resize', handleResize);
+      // Останавливаем анимацию
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
 
-      // Dispose of geometry and material to avoid memory leaks
+      window.removeEventListener("resize", handleResize);
+
+      // Удаляем все объекты Three.js
       if (toilet) {
+        scene.remove(toilet);
         toilet.traverse((child) => {
           if (child.isMesh) {
-            child.geometry.dispose();
-            if (child.material.isMaterial) {
-              child.material.dispose();
+            if (child.geometry) {
+              child.geometry.dispose();
+            }
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                child.material.forEach((material) => {
+                  if (material.dispose) material.dispose();
+                });
+              } else {
+                if (child.material.dispose) child.material.dispose();
+              }
             }
           }
         });
       }
 
-      // Ensure renderer and scene are cleaned up
-      renderer.dispose();
-      scene.clear(); // Remove all objects from the scene
-      if (canvasRef.current) {
-        canvasRef.current.remove(); // Remove canvas element
+      // Очищаем сцену
+      while (scene.children.length > 0) {
+        scene.remove(scene.children[0]);
       }
+
+      // Освобождаем ресурсы рендерера
+      if (renderer) {
+        renderer.dispose();
+      }
+
+      // Удаляем canvas элемент
+      if (canvasRef.current && canvasRef.current.parentNode) {
+        canvasRef.current.parentNode.removeChild(canvasRef.current);
+      }
+
+      // Очищаем ссылки
+      canvasRef.current = null;
     };
-  }, []); // Empty dependency array ensures this effect runs once when the component mounts
+  }, []);
 
   return (
-    <div style={{ position: "relative", display: 'flex', minHeight: '100vh', justifyContent: 'center', alignItems: 'center' }}>
-      <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, zIndex: -1 }} />
-      
-      <Container className="signin" size="xs" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%', padding: '20px' }}>
-        <Paper padding="xl" radius="md" shadow="xs" style={{ width: '100%' }}>
-          <Title order={2} align="center" mb="xl" style={{ color: 'white' }}>Войти</Title>
-          
-          <Group className="signinInputs" style={{ display: 'flex', flexDirection: 'column'}} direction="column" spacing="sm" grow>
-            <TextInput
-              label="Имя пользователя"
-              placeholder="Введите ваше имя"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              style={{ borderRadius: '8px' }}
-            />
-            <PasswordInput
-              label="Пароль"
-              placeholder="Введите ваш пароль"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ borderRadius: '8px' }}
-            />
-            <Group position="apart" align="center" mb="md">
-              <Anchor component="button" type="button" onClick={() => navigate("/register")}>
+    <div className="relative flex min-h-screen justify-center items-center">
+      <canvas
+        ref={canvasRef}
+        className="absolute top-0 left-0 w-full h-full z-0"
+      />
+
+      <div className="container mx-auto px-4 max-w-xs z-10">
+        <div className="bg-transparent p-8 w-full">
+          <h2 className="text-2xl font-bold text-center mb-8 text-white">
+            Войти
+          </h2>
+
+          <div className="flex flex-col space-y-4">
+            <div className="space-y-2">
+              <label className="block text-white text-sm font-medium">
+                Имя пользователя
+              </label>
+              <input
+                type="text"
+                placeholder="Введите ваше имя"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-white text-sm font-medium">
+                Пароль
+              </label>
+              <input
+                type="password"
+                placeholder="Введите ваш пароль"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex justify-between items-center mb-4">
+              <button
+                onClick={() => navigate("/register")}
+                className="text-white hover:text-blue-300 transition-colors duration-200"
+              >
                 Регистрация
-              </Anchor>
-            </Group>
-            <Button
-              fullWidth
+              </button>
+            </div>
+
+            <button
               onClick={handleLogin}
-              loading={loading}
-              style={{
-                background: '#3498db',
-                borderRadius: '8px',
-                padding: '12px',
-                color: '#fff',
-                fontWeight: 'bold'
-              }}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#2980b9'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = '#3498db'}
+              disabled={loading}
+              className={`w-full py-3 px-4 rounded-lg font-bold transition-colors duration-200 ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-600 text-white"
+              }`}
             >
-              Войти
-            </Button>
-          </Group>
-        </Paper>
-      </Container>
+              {loading ? (
+                <div className="flex justify-center items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <span className="ml-2">Загрузка...</span>
+                </div>
+              ) : (
+                "Войти"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

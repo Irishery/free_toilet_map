@@ -1,4 +1,8 @@
 /* В index.css или глобальном файле */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .mantine-Modal-root {
   z-index: 9999 !important;
 }

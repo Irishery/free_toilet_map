@@ -11,7 +11,7 @@ export default function PrivateRoute({ children }) {
 
   // Проверим срок действия токена (например, если это JWT)
   try {
-    const decodedToken = JSON.parse(atob(token.split('.')[1])); // Декодируем JWT
+    const decodedToken = JSON.parse(atob(token.split(".")[1])); // Декодируем JWT
     const expirationDate = new Date(decodedToken.exp * 1000); // Преобразуем время в миллисекунды
 
     // Если токен истёк, удаляем его из localStorage и перенаправляем на страницу логина

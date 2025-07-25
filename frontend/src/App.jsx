@@ -11,8 +11,13 @@ export default function App() {
   return (
     <ModalsProvider>
       <Routes>
-        <Route path="/" element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} />
-        
+        <Route
+          path="/"
+          element={
+            token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />
+          }
+        />
+
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
