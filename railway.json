@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "services": {
+    "toilet-app": {
+      "dockerfile": "docker-compose.prod.yml",
+      "environments": {
+        "production": {
+          "dockerCompose": true
+        }
+      }
+    }
+  }
+}
